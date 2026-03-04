@@ -62,22 +62,48 @@ Each record written to the JSONL file contains:
 
 The first record in each session contains the model weights and bias used for that run.
 
-## Performance (Session 20260304T051404)
+## Session Performance (20260304T051404)
 
-*Session performance truncated due to the upload limit on GitHub, real testing had a duration of 3 minutes.*
+> Results from a truncated log due to GitHub's upload limit. Real session duration was 3 minutes.
+
+### Infrastructure
 
 | Metric | Value |
 |---|---|
-| Total records | 92,999 |
-| Duration | 18.3 seconds |
-| Throughput | ~5,082 records/sec |
 | Workers | 108 |
-| Anomaly ratio observed | 13.03% |
-| Model accuracy (normal samples) | 79.22% |
+| Duration | 18.3 s |
+| Throughput | ~5,082 records/sec |
+| Total records | 92,999 |
+| Observed anomaly ratio | 13.03% |
+
+### Model
+
+| Metric | Value |
+|---|---|
+| Accuracy (normal samples) | 79.22% |
 | Recall | 99.88% |
 | False positive rate | 98.58% |
 
-> The high false positive rate indicates a labeling mismatch between the training generator and the load generator's `_sample()` function.
+The high false positive rate points to a labeling mismatch between `vector_and_value()` used during training and `_sample()` inside the load generator. With a negative bias and very small weights, the net input is almost always positive, causing the model to default to class 1.
+
+### Uncertainty
+
+Each inference includes an angle and cosine similarity between the input vector `x` and the weight vector `w`, used as a confidence proxy.
+
+| Angle | Meaning |
+|---|---|
+| Near 0° | x aligns with w — high confidence, predicts 1 |
+| Near 90° | x is perpendicular to w — maximum uncertainty |
+| Above 90° | x opposes w — high confidence, predicts 0 |
+
+| Metric | Mean | Std Dev | Range |
+|---|---|---|---|
+| Angle (deg) | 42.12 | 31.75 | 8.03 — 161.65 |
+| Cosine similarity | 0.7075 | 0.4391 | -0.95 — 0.99 |
+
+A well-calibrated model would show angles concentrated near the extremes. A standard deviation of 31 degrees across a 153-degree spread indicates the model receives highly heterogeneous inputs with no clearly learned decision boundary.
+
+*While the results were not as expected, this demonstrates how implementing a load generator in MLOps tasks ensures that models to be deployed are robust within development pipelines.*
 
 ## Requirements
 
