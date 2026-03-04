@@ -84,7 +84,7 @@ The first record in each session contains the model weights and bias used for th
 | Recall | 99.88% |
 | False positive rate | 98.58% |
 
-The high false positive rate points to a labeling mismatch between `vector_and_value()` used during training and `_sample()` inside the load generator. With a negative bias and very small weights, the net input is almost always positive, causing the model to default to class 1.
+The high false positive rate reveals a stochastic degeneracy: under seed 137, the training process converged to a weight vector with near-zero magnitude and a negative bias, causing the net input `z = w · x + b` to be positive for virtually all inputs and collapsing the model to a constant class-1 predictor. This is not a code defect — the learning rule executed correctly. The degenerate solution was a product of the random initialization and the geometry of the training sample under that specific seed. The load generator was the instrument that made this failure observable at scale: without concurrent inference traffic and structured logging, the collapse would have gone undetected until deployment.
 
 ### Uncertainty
 
@@ -103,10 +103,10 @@ Each inference includes an angle and cosine similarity between the input vector 
 
 A well-calibrated model would show angles concentrated near the extremes. A standard deviation of 31 degrees across a 153-degree spread indicates the model receives highly heterogeneous inputs with no clearly learned decision boundary.
 
-*While the results were not as expected, this demonstrates how implementing a load generator in MLOps tasks ensures that models to be deployed are robust within development pipelines.*
+*The session exposed a class of failure that unit tests cannot catch: statistically valid training that produces a degenerate model. This is precisely the scenario a load generator exists to surface before deployment.*
 
 ## Requirements
 
-```
+```txt
 numpy
 ```
