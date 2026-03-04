@@ -64,6 +64,8 @@ The first record in each session contains the model weights and bias used for th
 
 ## Performance (Session 20260304T051404)
 
+*Session performance truncated due to the upload limit on GitHub, real testing had a duration of 3 minutes.*
+
 | Metric | Value |
 |---|---|
 | Total records | 92,999 |
